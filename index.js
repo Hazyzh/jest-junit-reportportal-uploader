@@ -31,8 +31,7 @@ module.exports = (report) => {
   const jsonResults = buildJsonResults(report, fs.realpathSync(process.cwd()), options);
 
   // Ensure output path exists
-  mkdirp.sync(path.dirname(options.output));
-
+  mkdirp.sync(path.join(process.cwd(), options.output));
   // Write data to file
   const xmlReport = xml(jsonResults, { indent: '  ' })
   zip
