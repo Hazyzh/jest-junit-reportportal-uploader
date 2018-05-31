@@ -38,7 +38,7 @@ module.exports = (report) => {
   zip
     .file("report.xml", Buffer.from(xmlReport))
     .generateNodeStream({ type: 'nodebuffer', streamFiles: true })
-    .pipe(fs.createWriteStream(`${options.output}/report${buildNumber || ''}.zip`))
+    .pipe(fs.createWriteStream(`${options.output}/${buildNumber ? `build #${buildNumber}` : 'report'}.zip`))
     .on('finish', function () {
       console.log("zip file saved.");
       if (reportUrl && reportProject && reportToken) {
