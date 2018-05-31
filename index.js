@@ -14,6 +14,7 @@ const getOptions = require('./utils/getOptions');
 const reportUrl = process.env.report_url
 const reportProject = process.env.report_project
 const reportToken = process.env.report_token
+const buildNumber = process.env.BUILD_NUMBER;
 
 /*
   At the end of ALL of the test suites this method is called
@@ -37,7 +38,7 @@ module.exports = (report) => {
   zip
     .file("report.xml", Buffer.from(xmlReport))
     .generateNodeStream({ type: 'nodebuffer', streamFiles: true })
-    .pipe(fs.createWriteStream(`${options.output}/report.zip`))
+    .pipe(fs.createWriteStream(`${options.output}/report${buildNumber || ''}.zip`))
     .on('finish', function () {
       console.log("zip file saved.");
       if (reportUrl && reportProject && reportToken) {
