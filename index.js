@@ -30,7 +30,7 @@ const buildNumber = process.env.BUILD_NUMBER;
 module.exports = (report) => {
   const options = getOptions.options();
   const jsonResults = buildJsonResults(report, fs.realpathSync(process.cwd()), options);
-
+  const filename = `${options.output}/${buildNumber ? `build #${buildNumber}` : 'report'}.zip`;
   // Ensure output path exists
   mkdirp.sync(path.join(process.cwd(), options.output));
   // Write data to file
@@ -38,7 +38,7 @@ module.exports = (report) => {
   zip
     .file("report.xml", Buffer.from(xmlReport))
     .generateNodeStream({ type: 'nodebuffer', streamFiles: true })
-    .pipe(fs.createWriteStream(`${options.output}/${buildNumber ? `build #${buildNumber}` : 'report'}.zip`))
+    .pipe(fs.createWriteStream(filename))
     .on('finish', function () {
       console.log("zip file saved.");
       if (reportUrl && reportProject && reportToken) {
@@ -49,7 +49,7 @@ module.exports = (report) => {
             "Authorization": `bearer ${reportToken}`
           },
           formData: {
-            file: fs.createReadStream(`${options.output}/report.zip`)
+            file: fs.createReadStream(filename)
           }
         };
         request.post(reqOptions, function optionalCallback(err, httpResponse, body) {
