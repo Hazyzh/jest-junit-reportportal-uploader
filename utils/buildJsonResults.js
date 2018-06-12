@@ -13,13 +13,23 @@ const replaceVars = function (str, replacementMap) {
   return str;
 };
 
+const executionTime = function (startTime, endTime) {
+  return (endTime - startTime) / 1000;
+}
+
 module.exports = function (report, appDirectory, options) {
   // Generate a single XML file for all jest tests
   let jsonResults = {
     'testsuites': [
       {
         '_attr': {
-          'name': options.suiteName
+          'name': options.suiteName,
+          'tests': 0,
+          'failures': 0,
+          // Overall execution time:
+          // Since tests are typically executed in parallel this time can be significantly smaller
+          // than the sum of the individual test suites
+          'time': executionTime(report.startTime, Date.now())
         }
       }
     ]
@@ -45,14 +55,19 @@ module.exports = function (report, appDirectory, options) {
     const filepath = suite.testFilePath.replace(appDirectory, '');
     const filename = path.basename(filepath);
     const suiteTitle = suite.testResults[0].ancestorTitles[0];
+    const displayName = suite.displayName;
 
     // Build replacement map
     let suiteReplacementMap = {};
     suiteReplacementMap[constants.FILEPATH_VAR] = filepath;
     suiteReplacementMap[constants.FILENAME_VAR] = filename;
     suiteReplacementMap[constants.TITLE_VAR] = suiteTitle;
+    suiteReplacementMap[constants.DISPLAY_NAME_VAR] = displayName;
 
     // Add <testsuite /> properties
+    const suiteNumTests = suite.numFailingTests + suite.numPassingTests + suite.numPendingTests;
+    const suiteExecutionTime = executionTime(suite.perfStats.start, suite.perfStats.end);
+
     let testSuite = {
       'testsuite': [{
         _attr: {
@@ -61,10 +76,15 @@ module.exports = function (report, appDirectory, options) {
           failures: suite.numFailingTests,
           skipped: suite.numPendingTests,
           timestamp: (new Date(suite.perfStats.start)).toISOString().slice(0, -5),
-          time: (suite.perfStats.end - suite.perfStats.start) / 1000
+          time: suiteExecutionTime,
+          tests: suiteNumTests
         }
       }]
     };
+
+    // Update top level testsuites properties
+    jsonResults.testsuites[0]._attr.failures += suite.numFailingTests;
+    jsonResults.testsuites[0]._attr.tests += suiteNumTests;
 
     // Iterate through test cases
     suite.testResults.forEach((tc) => {
@@ -73,8 +93,11 @@ module.exports = function (report, appDirectory, options) {
 
       // Build replacement map
       let testReplacementMap = {};
+      testReplacementMap[constants.FILEPATH_VAR] = filepath;
+      testReplacementMap[constants.FILENAME_VAR] = filename;
       testReplacementMap[constants.CLASSNAME_VAR] = classname;
       testReplacementMap[constants.TITLE_VAR] = testTitle;
+      testReplacementMap[constants.DISPLAY_NAME_VAR] = displayName;
 
       let testCase = {
         'testcase': [{

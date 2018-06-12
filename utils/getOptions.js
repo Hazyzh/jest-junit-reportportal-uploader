@@ -41,12 +41,12 @@ function getAppOptions(pathToResolve) {
     }
   }
 
-  throw new Error(`Unable to locate package.json starting at ${initialPath}`);
+  return {};
 }
 
 module.exports = {
-  options: function () {
-    return Object.assign({}, constants.DEFAULT_OPTIONS, getAppOptions(process.cwd()), getEnvOptions());
+  options: (reporterOptions = {}) => {
+    return Object.assign({}, constants.DEFAULT_OPTIONS, reporterOptions, getAppOptions(process.cwd()), getEnvOptions());
   },
   getAppOptions: getAppOptions,
   getEnvOptions: getEnvOptions

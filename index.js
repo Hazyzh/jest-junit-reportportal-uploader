@@ -7,6 +7,7 @@ const path = require('path');
 const JSZip = require('jszip');
 const zip = new JSZip();
 const request = require('request')
+const jestValidate = require('jest-validate');
 
 const buildJsonResults = require('./utils/buildJsonResults');
 const getOptions = require('./utils/getOptions');
@@ -14,24 +15,17 @@ const getOptions = require('./utils/getOptions');
 const reportUrl = process.env.report_url
 const reportProject = process.env.report_project
 const reportToken = process.env.report_token
+const processor = (report, reporterOptions = {}) => {
+  // If jest-junit is used as a reporter allow for reporter options
+  // to be used. Env and package.json will override.
+  const options = getOptions.options(reporterOptions);
 
-/*
-  At the end of ALL of the test suites this method is called
-  It's responsible for generating a single junit.xml file which
-  Represents the status of the test runs
-
-  Expected input and workflow documentation here:
-  https://facebook.github.io/jest/docs/configuration.html#testresultsprocessor-string
-
-  Intended output (junit XML) documentation here:
-  http://help.catchsoftware.com/display/ET/JUnit+Format
-*/
-module.exports = (report) => {
-  const options = getOptions.options();
   const jsonResults = buildJsonResults(report, fs.realpathSync(process.cwd()), options);
 
   // Ensure output path exists
   mkdirp.sync(path.join(process.cwd(), options.output));
+
+
   // Write data to file
   const xmlReport = xml(jsonResults, { indent: '  ' })
   zip
@@ -63,3 +57,33 @@ module.exports = (report) => {
   // Jest 18 compatibility
   return report;
 };
+
+
+// This is an old school "class" in order
+// for the constructor to be invoked statically and via "new"
+// so we can support both testResultsProcessor and reporters
+// TODO: refactor to es6 class after testResultsProcessor support is removed
+function JestJUnit (globalConfig, options) {
+  // See if constructor was invoked statically
+  // which indicates jest-junit was invoked as a testResultsProcessor
+  // and show deprecation warning
+
+  if (globalConfig.hasOwnProperty('testResults')) {
+    const newConfig = JSON.stringify({
+      reporters: ['jest-junit']
+    }, null, 2);
+
+    jestValidate.logValidationWarning('testResultsProcessor support is deprecated. Please use jest reporter. See https://github.com/jest-community/jest-junit#usage', newConfig);
+    return processor(globalConfig);
+  }
+
+  this._globalConfig = globalConfig;
+  this._options = options;
+
+  this.onRunComplete = (contexts, results) => {
+    processor(results, this._options);
+  };
+}
+
+module.exports = JestJUnit;
+

@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/palmerj3/jest-junit.svg?branch=master)](https://travis-ci.org/palmerj3/jest-junit)
+[![Build Status](https://travis-ci.org/jest-community/jest-junit.svg?branch=master)](https://travis-ci.org/jest-community/jest-junit)
 
 # jest-junit
 A Jest reporter that creates compatible junit xml files
@@ -8,7 +8,24 @@ A Jest reporter that creates compatible junit xml files
 yarn add --dev jest-junit
 ```
 
+## Important Notice
+In an upcoming major version 5.x jest-junit will no longer function as a testResultProcessor. It will only work as a jest reporter. See the docs just below this for how to transition your project.
+
 ## Usage
+In your jest config add the following entry:
+```JSON
+{
+  "reporters": [ "default", "jest-junit" ]
+}
+```
+
+Then simply run:
+
+```shell
+jest
+```
+
+## Usage as testResultsProcessor
 In your jest config add the following entry:
 ```JSON
 {
@@ -29,15 +46,15 @@ jest --ci --testResultsProcessor="jest-junit"
 
 ## Configuration
 
-`jest-junit` offers five configurations based on environment variables or a `jest-junit` key defined in `package.json`. All configuration values should be **strings**.
+`jest-junit` offers seven configurations based on environment variables or a `jest-junit` key defined in `package.json` or a reporter option. All configuration values should be **strings**.
 
 | Variable Name | Description | Default | Possible Injection Values
 |--|--|--|--|
 | `JEST_SUITE_NAME` | `name` attribute of `<testsuites>` | `"jest tests"` | N/A
 | `JEST_JUNIT_OUTPUT` | File path to save the output. | `"./junit.xml"` | N/A
-| `JEST_JUNIT_SUITE_NAME` | Template string for `name` attribute of the `<testsuite>`. | `"{title}"` | `{title}`, `{filepath}`, `{filename}`
-| `JEST_JUNIT_CLASSNAME` | Template string for the `classname` attribute of `<testcase>`. | `"{classname} {title}"` | `{classname}`, `{title}`
-| `JEST_JUNIT_TITLE` | Template string for the `name` attribute of `<testcase>`. | `"{classname} {title}"` | `{classname}`, `{title}`
+| `JEST_JUNIT_SUITE_NAME` | Template string for `name` attribute of the `<testsuite>`. | `"{title}"` | `{title}`, `{filepath}`, `{filename}`, `{displayName}`
+| `JEST_JUNIT_CLASSNAME` | Template string for the `classname` attribute of `<testcase>`. | `"{classname} {title}"` | `{classname}`, `{title}`, `{filepath}`, `{filename}`, `{displayName}`
+| `JEST_JUNIT_TITLE` | Template string for the `name` attribute of `<testcase>`. | `"{classname} {title}"` | `{classname}`, `{title}`, `{filepath}`, `{filename}`, `{displayName}`
 | `JEST_JUNIT_ANCESTOR_SEPARATOR` | Character(s) used to join the `describe` blocks. | `" "` | N/A
 | `JEST_USE_PATH_FOR_SUITE_NAME` | **DEPRECATED. Use `suiteNameTemplate` instead.** Use file path as the `name` attribute of `<testsuite>` | `"false"` | N/A
 
@@ -61,6 +78,18 @@ Or you can also define a `jest-junit` key in your `package.json`.  All are **str
     "ancestorSeparator": " › ",
     "usePathForSuiteName": "true"
   }
+}
+```
+
+Or you can define your options in your reporter configuration.
+
+```js
+// jest.config.js
+{
+	reporters: [
+      "default",
+    	[ "jest-junit", { suiteName: "jest tests" } ]
+  ]
 }
 ```
 

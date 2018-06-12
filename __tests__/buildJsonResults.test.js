@@ -4,6 +4,20 @@ const buildJsonResults = require('../utils/buildJsonResults');
 const constants = require('../constants/index');
 
 describe('buildJsonResults', () => {
+  it('should contain number of tests in testSuite', () => {
+    const noFailingTestsReport = require('../__mocks__/no-failing-tests.json');
+    const jsonResults = buildJsonResults(noFailingTestsReport, '', constants.DEFAULT_OPTIONS);
+
+    expect(jsonResults.testsuites[1].testsuite[0]._attr.tests).toBe(1);
+  });
+
+  it('should contain number of tests in testSuites', () => {
+    const noFailingTestsReport = require('../__mocks__/no-failing-tests.json');
+    const jsonResults = buildJsonResults(noFailingTestsReport, '', constants.DEFAULT_OPTIONS);
+
+    expect(jsonResults.testsuites[0]._attr.tests).toBe(1);
+  });
+
   it('should return the proper name from ancestorTitles when usePathForSuiteName is "false"', () => {
     const noFailingTestsReport = require('../__mocks__/no-failing-tests.json');
     const jsonResults = buildJsonResults(noFailingTestsReport, '', constants.DEFAULT_OPTIONS);
@@ -16,6 +30,20 @@ describe('buildJsonResults', () => {
     const jsonResults = buildJsonResults(noFailingTestsReport, '',
       Object.assign({}, constants.DEFAULT_OPTIONS, { suiteNameTemplate: "{filename}" }));
     expect(jsonResults.testsuites[1].testsuite[0]._attr.name).toBe('foo.test.js');
+  });
+
+  it('should return the proper filename when classNameTemplate is "{filename}"', () => {
+    const noFailingTestsReport = require('../__mocks__/no-failing-tests.json');
+    const jsonResults = buildJsonResults(noFailingTestsReport, '',
+      Object.assign({}, constants.DEFAULT_OPTIONS, { classNameTemplate: "{filename}" }));
+    expect(jsonResults.testsuites[1].testsuite[1].testcase[0]._attr.classname).toBe('foo.test.js');
+  });
+
+  it('should return the proper filepath when titleTemplate is "{filepath}"', () => {
+    const noFailingTestsReport = require('../__mocks__/no-failing-tests.json');
+    const jsonResults = buildJsonResults(noFailingTestsReport, '',
+      Object.assign({}, constants.DEFAULT_OPTIONS, { titleTemplate: "{filepath}" }));
+    expect(jsonResults.testsuites[1].testsuite[1].testcase[0]._attr.name).toBe('/path/to/test/__tests__/foo.test.js');
   });
 
   it('should return the proper filepath when suiteNameTemplate is "{filepath}" and usePathForSuiteName is "false"', () => {
@@ -71,4 +99,19 @@ describe('buildJsonResults', () => {
 
   });
 
+  it('should support displayName template var for jest multi-project', () => {
+    const multiProjectNoFailingTestsReport = require('../__mocks__/multi-project-no-failing-tests.json');
+
+    // Mock Date.now() to return a fixed later value
+    const startDate = new Date(multiProjectNoFailingTestsReport.startTime);
+    spyOn(Date, 'now').and.returnValue(startDate.getTime() + 1234);
+
+    const jsonResults = buildJsonResults(multiProjectNoFailingTestsReport, '',
+    Object.assign({}, constants.DEFAULT_OPTIONS, {
+      suiteNameTemplate: "{displayName}-foo",
+      titleTemplate: "{displayName}-foo"
+    }));
+
+    expect(jsonResults).toMatchSnapshot();
+  });
 });
